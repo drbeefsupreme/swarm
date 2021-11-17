@@ -1,0 +1,9 @@
+:~  title+'Swarm'
+    info+'A proof of concept particle swarm optimization app'
+    color+0x81.88c9
+    base+'swarm'
+    glob-ames+[~zod 0v0]
+    version+[0 0 1]
+    website+'https://urbit.org/'
+    license+'MIT'
+==
