@@ -1,1 +1,11 @@
-../../base-dev/mar/path.hoon
+|_  pax=path
+++  grad  %noun
+++  grow
+  |%
+  ++  noun  pax
+  --
+++  grab
+  |%
+  ++  noun  path
+  --
+--
