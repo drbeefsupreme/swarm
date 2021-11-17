@@ -32,7 +32,7 @@
 ::
 ++  on-init
   ^-  (quip card _this)
-  =/  ship-num=@  100
+  =/  ship-num=@  10
   =/  i=@  0
   =*  pos  pos.state
   =*  vel  vel.state
@@ -43,7 +43,7 @@
     ~&  '%swarm init'
     =.  group-bes.state  (~(got by bes) `@p`0)
     `this
-  =^  rapx  rng  (rads:rng 1.000)      :: for individual best
+  =^  rapx  rng  (rads:rng 1.000)
   =^  rapy  rng  (rads:rng 1.000)
   =^  ravx  rng  (rads:rng 10)
   =^  ravy  rng  (rads:rng 10)
@@ -124,7 +124,7 @@
     =*  gby  y.pos.group-bes.state
     =/  c1=@rd  .~0.3
     =/  c2=@rd  .~0.2
-    =/  rng  ~(. og (add steps.state `@`x.pos))
+    =/  rng  ~(. og (add steps.state `@`px))
     =^  ran1  rng  (rads:rng 1.000)
     =^  ran2  rng  (rads:rng 1.000)
     =/  r1=@rd  (div:rd (sun:rd ran1) .~1000)
@@ -135,12 +135,20 @@
     ::  + c_2 * r_2(t) * (b(t) - x_i(t))
     =/  dif=[x=@rd y=@rd]     [(sub:rd bx px) (sub:rd by py)]
     =/  bes-dif=[x=@rd y=@rd]  [(sub:rd gbx px) (sub:rd gby py)]
-    =/  newvel=[x=@rd y=@rd]  :-  (add:rd (add:rd (mul:rd w vx) (mul:rd (mul:rd c1 r1) x.dif)) (mul:rd (mul:rd c2 r2) x.bes-dif))
-                              (add:rd (add:rd (mul:rd w vy) (mul:rd (mul:rd c1 r1) y.dif)) (mul:rd (mul:rd c2 r2) y.bes-dif))
+    =/  newvel=[x=@rd y=@rd]  :-  ;:  add:rd
+                                      (mul:rd w vx)
+                                      ;:(mul:rd c1 r1 x.dif)
+                                      ;:(mul:rd c2 r2 x.bes-dif)
+                                  ==
+                                  ;:  add:rd
+                                      (mul:rd w vy)
+                                      ;:(mul:rd c1 r1 y.dif)
+                                      ;:(mul:rd c2 r2 y.bes-dif)
+                                  ==
     =/  newpos=[x=@rd y=@rd]  :-  (add:rd x.pos x.newvel)
-                            (add:rd y.pos y.newvel)
+                              (add:rd y.pos y.newvel)
     =/  objectives=[prev=@rd cur=@rd]  :-  (objective:hc pos.bes)
-                                     (objective:hc pos)
+                                       (objective:hc pos)
     ?:  (gth:rd prev.objectives cur.objectives)  :: is the previous best better than the current value?
       [newpos newvel bes]  :: best does not get updated
     [newpos newvel [newpos cur.objectives]]
