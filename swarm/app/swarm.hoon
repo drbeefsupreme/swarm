@@ -37,7 +37,7 @@
   =*  pos  pos.state
   =*  vel  vel.state
   =*  bes  bes.state
-  =/  rng  ~(. og 'swarm')
+  =/  rng  ~(. og eny.bowl)
   |-
   ?:  =(i ship-num)
     ~&  '%swarm init'
@@ -124,7 +124,7 @@
     =*  gby  y.pos.group-bes.state
     =/  c1=@rd  .~0.3
     =/  c2=@rd  .~0.2
-    =/  rng  ~(. og (add steps.state `@`px))
+    =/  rng  ~(. og eny.bowl)
     =^  ran1  rng  (rads:rng 1.000)
     =^  ran2  rng  (rads:rng 1.000)
     =/  r1=@rd  (div:rd (sun:rd ran1) .~1000)
