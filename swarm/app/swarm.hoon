@@ -9,15 +9,17 @@
     ==
 ::
 ++  state-0  $:  %0
-                 pos=(map @p [x=@rd y=@rd])
-                 vel=(map @p [x=@rd y=@rd])
-                 bes=(map @p [pos=[x=@rd y=@rd] val=@rd])
-                 group-bes=[pos=[x=@rd y=@rd] val=@rd]
+                 pos=(map @p loc)
+                 vel=(map @p loc)
+                 bes=(map @p [loc val=@rd])
+                 group-bes=[pos=loc val=@rd]
                  ships=(list ship)
+                 ship-num=@ud
                  steps=@ud
              ==
 ::
 +$  card  card:agent:gall
++$  loc   [x=@rd y=@rd]
 --
 ::
 %-  agent:dbug
@@ -32,14 +34,14 @@
 ::
 ++  on-init
   ^-  (quip card _this)
-  =/  ship-num=@  10
+  =.  ship-num.state  10
   =/  i=@  0
   =*  pos  pos.state
   =*  vel  vel.state
   =*  bes  bes.state
   =/  rng  ~(. og eny.bowl)
   |-
-  ?:  =(i ship-num)
+  ?:  =(i ship-num.state)
     ~&  '%swarm init'
     =.  group-bes.state  (~(got by bes) `@p`0)
     `this
@@ -53,9 +55,12 @@
   =/  startvy=@rd  (sub:rd (sun:rd ravy) .~5)
   %=  $
     i    +(i)
-    pos  (~(put by pos) `@p`i [startpx startpy])
-    vel  (~(put by vel) `@p`i [startvx startvy])
-    bes  (~(put by bes) `@p`i [[startpx startpy] (objective:hc [startpx startpy])])
+    pos  (~(put by pos) `@p`i `loc`[startpx startpy])
+    vel  (~(put by vel) `@p`i `loc`[startvx startvy])
+    bes  %+  ~(put by bes)
+           `@p`i
+         :-  `loc`[startpx startpy]
+         (objective:hc `loc`[startpx startpy])
   ==
   ::
 ++  on-save
@@ -83,9 +88,9 @@
     =*  pos  pos.a
     =*  vel  vel.a
     =*  grp  group-bes.a
-    =/  i=@  0
+    =/  i=@ud  0
     |-
-    ?:  =(i 10)
+    ?:  =(i ship-num.state)
       a(steps +(steps))
     =/  phase  %^    update-phase
                    (~(got by pos) `@p`i)
@@ -108,8 +113,8 @@
     ==
   ::
   ++  update-phase
-    |=  [pos=[x=@rd y=@rd] vel=[x=@rd y=@rd] bes=[pos=[x=@rd y=@rd] val=@rd]]
-    ^-  [pos=[x=@rd y=@rd] vel=[x=@rd y=@rd] bes=[pos=[x=@rd y=@rd] val=@rd]]
+    |=  [pos=loc vel=loc bes=[pos=loc val=@rd]]
+    ^-  [pos=loc vel=loc bes=[pos=loc val=@rd]]
     ::  x_i - position, v_i - velocity, b_i - best position so far
     ::  b - best group position, c_1 - cognitive coefficient
     ::  c_2 - social coefficient, r_1, r_2 random number between 0 and 1
@@ -133,20 +138,20 @@
     ::  velocity is updated according to the following rule:
     ::  v_i(t+1) = w * v_i(t) + c_1 * r_1(t) * (b_i(t) - x_i(t))
     ::  + c_2 * r_2(t) * (b(t) - x_i(t))
-    =/  dif=[x=@rd y=@rd]     [(sub:rd bx px) (sub:rd by py)]
-    =/  bes-dif=[x=@rd y=@rd]  [(sub:rd gbx px) (sub:rd gby py)]
-    =/  newvel=[x=@rd y=@rd]  :-  ;:  add:rd
-                                      (mul:rd w vx)
-                                      ;:(mul:rd c1 r1 x.dif)
-                                      ;:(mul:rd c2 r2 x.bes-dif)
-                                  ==
-                                  ;:  add:rd
-                                      (mul:rd w vy)
-                                      ;:(mul:rd c1 r1 y.dif)
-                                      ;:(mul:rd c2 r2 y.bes-dif)
-                                  ==
-    =/  newpos=[x=@rd y=@rd]  :-  (add:rd x.pos x.newvel)
-                              (add:rd y.pos y.newvel)
+    =/  dif=loc      [(sub:rd bx px) (sub:rd by py)]
+    =/  bes-dif=loc  [(sub:rd gbx px) (sub:rd gby py)]
+    =/  newvel=loc   :-  ;:  add:rd
+                         (mul:rd w vx)
+                         ;:(mul:rd c1 r1 x.dif)
+                         ;:(mul:rd c2 r2 x.bes-dif)
+                     ==
+                     ;:  add:rd
+                         (mul:rd w vy)
+                         ;:(mul:rd c1 r1 y.dif)
+                         ;:(mul:rd c2 r2 y.bes-dif)
+                     ==
+    =/  newpos=loc   :-  (add:rd x.pos x.newvel)
+                     (add:rd y.pos y.newvel)
     =/  objectives=[prev=@rd cur=@rd]  :-  (objective:hc pos.bes)
                                        (objective:hc pos)
     ?:  (gth:rd prev.objectives cur.objectives)  :: is the previous best better than the current value?
@@ -164,7 +169,7 @@
 ::  helper core
 |_  bowl=bowl:gall
 ++  objective
-  |=  [x=@rd y=@rd]
+  |=  loc
   ^-  @rd
   (sub:rd .~0 (add:rd (mul:rd x x) (mul:rd y y)))  ::  -(x^2+y^2)
 --
