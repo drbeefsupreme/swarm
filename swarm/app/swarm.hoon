@@ -49,19 +49,25 @@
   =^  rapy  rng  (rads:rng 1.000)
   =^  ravx  rng  (rads:rng 10)
   =^  ravy  rng  (rads:rng 10)
-  =/  startpx=@rd  (sub:rd (sun:rd rapx) .~500)
-  =/  startpy=@rd  (sub:rd (sun:rd rapy) .~500)
-  =/  startvx=@rd  (sub:rd (sun:rd ravx) .~5)
-  =/  startvy=@rd  (sub:rd (sun:rd ravy) .~5)
-  %=  $
-    i    +(i)
-    pos  (~(put by pos) `@p`i `loc`[startpx startpy])
-    vel  (~(put by vel) `@p`i `loc`[startvx startvy])
-    bes  %+  ~(put by bes)
-           `@p`i
-         :-  `loc`[startpx startpy]
-         (objective:hc `loc`[startpx startpy])
-  ==
+  =/  startp=loc   [(sub:rd (sun:rd rapx) .~500) (sub:rd (sun:rd rapy) .~500)]
+  =/  startv=loc   [(sub:rd (sun:rd ravx) .~5) (sub:rd (sun:rd ravy) .~5)]
+  =/  obj=@rd    (objective:hc startp)
+  ?:  =(i 0)
+    =.  group-bes.state  [startp obj]  (rec startp startv obj)
+  ?:  (gte:rd obj val.group-bes.state)
+    =.  group-bes.state  [startp obj]  (rec startp startv obj)
+  (rec startp startv obj)
+  ++  rec
+    |=  [startp=loc startv=loc obj=@rd]
+    %=  ^$
+      i    +(i)
+      pos  (~(put by pos) `@p`i startp)
+      vel  (~(put by vel) `@p`i startv)
+      bes  %+  ~(put by bes)
+             `@p`i
+           [startp obj]
+    ==
+  --
   ::
 ++  on-save
   ^-  vase
