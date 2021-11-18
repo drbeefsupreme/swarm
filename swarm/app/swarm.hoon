@@ -1,5 +1,6 @@
 ::  TODO
 ::  add networking
+::  add peeks
 ::  make random factor in update a gaussian rather than uniform
 ::  use lagoon
 /+  default-agent, dbug
@@ -13,7 +14,7 @@
                  vel=(map @p loc)
                  bes=(map @p [loc val=@rd])
                  group-bes=[pos=loc val=@rd]
-                 ships=(list ship)
+                 ships=(set ship)
                  ship-num=@ud
                  steps=@ud
              ==
@@ -29,11 +30,12 @@
 =<
 |_  =bowl:gall
 +*  this  .
-    default  ~(. (default-agent this %|) bowl)
-    hc       ~(. +> bowl)
+    def  ~(. (default-agent this %|) bowl)
+    hc   ~(. +> bowl)
 ::
 ++  on-init
   ^-  (quip card _this)
+  ~&  >  '%swarm init'
   =.  ship-num.state  10
   =/  i=@  0
   =*  pos  pos.state
@@ -42,9 +44,8 @@
   =/  rng  ~(. og eny.bowl)
   |^
   ?:  =(i ship-num.state)
-    ~&  '%swarm init'
-    =.  group-bes.state  (~(got by bes) `@p`0)
     `this
+  =.  ships.state  (~(put in ships) `@p`i)
   =^  rapx  rng  (rads:rng 1.000)
   =^  rapy  rng  (rads:rng 1.000)
   =^  ravx  rng  (rads:rng 10)
@@ -72,43 +73,56 @@
   !>(state)
 ++  on-load
   ~&  >  'on-load'
-  on-load:default
+  on-load:def
 ++  on-poke
   |=  [=mark =vase]
   |^
   ^-  (quip card _this)
-  ~&  group-bes.state
-  `this(state (update state))
-::  (on-poke:default mark vase)
-  ::`this
-  ::  ?+    mark  (on-poke:def mark vase)
-  ::      %noun
-  ::    ~&  'noun'
-  ::  ==
-  ++  update
-    |=  a=_state
-    ^+  state
+  ?+    mark  (on-poke:def mark vase)
+      %noun
+    ?+    q.vase  (on-poke:def mark vase)
+        %print-state
+      ~&  >>  state
+      ~&  >>>  bowl
+      `this
+    ::
+        %update-all
+      ~&  >>  group-bes.state
+      `this(state (update-all state))
+    ::
+    ==
+  ==
+  ::
+  ++  update-ship
+    |=  [a=_state =ship]
+    ^+  a
     =*  bes  bes.a
     =*  pos  pos.a
     =*  vel  vel.a
     =*  grp  group-bes.a
-    =/  i=@ud  0
+    =/  phase  %^    update-phase
+                   (~(got by pos) ship)
+                 (~(got by vel) ship)
+               (~(got by bes) ship)
+    =.  pos  (~(put by pos) ship pos.phase)
+    =.  vel  (~(put by vel) ship vel.phase)
+    =.  bes  (~(put by bes) ship bes.phase)
+    ::  if new objective is better than group best, update group best
+    =.  grp  ?.  (gte:rd val.bes.phase val.grp)
+             grp
+           [pos.phase val.bes.phase]
+    a
+  ::
+  ++  update-all
+    |=  a=_state
+    ^+  a
+    =/  i=@  0
     |-
     ?:  =(i ship-num.state)
       a(steps +(steps))
-    =/  phase  %^    update-phase
-                   (~(got by pos) `@p`i)
-                 (~(got by vel) `@p`i)
-               (~(got by bes) `@p`i)
-    ::  if new objective is better than group best, update group best
     %=  $
-      i    +(i)
-      pos  (~(put by pos) `@p`i pos.phase)
-      vel  (~(put by vel) `@p`i vel.phase)
-      bes  (~(put by bes) `@p`i bes.phase)
-      grp  ?.  (gte:rd val.bes.phase val.grp)
-             grp
-           [pos.phase val.bes.phase]
+      a  (update-ship a `@p`i)
+      i  +(i)
     ==
   ::
   ++  update-phase
@@ -158,17 +172,17 @@
     [newpos newvel [newpos cur.objectives]]
   --
 ::
-++  on-watch  on-watch:default
-++  on-leave  on-leave:default
-++  on-peek   on-peek:default
-++  on-agent  on-agent:default
-++  on-arvo   on-arvo:default
-++  on-fail   on-fail:default
+++  on-watch  on-watch:def
+++  on-leave  on-leave:def
+++  on-peek   on-peek:def
+++  on-agent  on-agent:def
+++  on-arvo   on-arvo:def
+++  on-fail   on-fail:def
 --
 ::  helper core
 |_  bowl=bowl:gall
 ++  objective
   |=  loc
   ^-  @rd
-  (sub:rd .~0 (add:rd (mul:rd x x) (mul:rd y y)))  ::  -(x^2+y^2)
+  (sub:rd .~0 (add:rd (mul:rd x x) ;:(mul:rd x x y y)))  ::  -(x^2+x^2y^2)
 --
