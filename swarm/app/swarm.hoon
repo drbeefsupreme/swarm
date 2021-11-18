@@ -40,7 +40,7 @@
   =*  vel  vel.state
   =*  bes  bes.state
   =/  rng  ~(. og eny.bowl)
-  |-
+  |^
   ?:  =(i ship-num.state)
     ~&  '%swarm init'
     =.  group-bes.state  (~(got by bes) `@p`0)
