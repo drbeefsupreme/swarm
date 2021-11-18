@@ -63,9 +63,7 @@
       i    +(i)
       pos  (~(put by pos) `@p`i startp)
       vel  (~(put by vel) `@p`i startv)
-      bes  %+  ~(put by bes)
-             `@p`i
-           [startp obj]
+      bes  (~(put by bes) `@p`i [startp obj])
     ==
   --
   ::
@@ -102,20 +100,15 @@
                    (~(got by pos) `@p`i)
                  (~(got by vel) `@p`i)
                (~(got by bes) `@p`i)
-    ?:  (gte:rd val.bes.phase val.grp)
-      ::  if new objective is better than group best, update group best
-      %=  $
-        i    +(i)
-        pos  (~(put by pos) `@p`i pos.phase)
-        vel  (~(put by vel) `@p`i vel.phase)
-        bes  (~(put by bes) `@p`i bes.phase)
-        grp  [pos.phase val.bes.phase]
-      ==
+    ::  if new objective is better than group best, update group best
     %=  $
       i    +(i)
       pos  (~(put by pos) `@p`i pos.phase)
       vel  (~(put by vel) `@p`i vel.phase)
       bes  (~(put by bes) `@p`i bes.phase)
+      grp  ?.  (gte:rd val.bes.phase val.grp)
+             grp
+           [pos.phase val.bes.phase]
     ==
   ::
   ++  update-phase
