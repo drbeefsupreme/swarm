@@ -107,14 +107,21 @@
 ++  on-fail   on-fail:def
 --
 ::  helper core
+::
 |_  bowl=bowl:gall
+::
+++  objective
+  |=  loc
+  ^-  @rd
+  (sub:rd .~0 (add:rd (mul:rd x x) ;:(mul:rd x x y y)))  ::  -(x^2+x^2y^2)
+::
 ++  on-action
   |=  =action
   ^-  (quip card _state)
   ?-  -.action
     %print-state  print-state
-    %update-all   [~ (update-all state)]
-    %update-ship  [~ (update-ship state +.action)]
+    %update-all   update-all
+    %update-ship  (update-ship +.action)
     %join-swarm   (join-swarm +.action)
   ==
 ::
@@ -123,12 +130,6 @@
   ~&  >>  state
   ~&  >>>  bowl
   `state
-::
-++  objective
-  |=  loc
-  ^-  @rd
-  (sub:rd .~0 (add:rd (mul:rd x x) ;:(mul:rd x x y y)))  ::  -(x^2+x^2y^2)
-::
 ::
 ++  join-swarm
   |=  =ship
@@ -140,12 +141,13 @@
   state(ships (~(put in ships) ship))
 ::
 ++  update-ship
-  |=  [a=_state =ship]
-  ^+  a
-  =*  bes  bes.a
-  =*  pos  pos.a
-  =*  vel  vel.a
-  =*  grp  group-bes.a
+  |=  =ship
+  ^-  (quip card _state)
+  ~|  'update-ship failed'
+  =*  bes  bes.state
+  =*  pos  pos.state
+  =*  vel  vel.state
+  =*  grp  group-bes.state
   =/  phase  %^    update-phase
                  (~(got by pos) ship)
                (~(got by vel) ship)
@@ -158,24 +160,23 @@
   =.  grp  ?.  (gte:rd val.bes.phase val.grp)
            grp
          [pos.phase val.bes.phase]
-  a
+  `state
 ::
 ++  update-all
-  |=  a=_state
-  ^+  a
+  ^-  (quip card _state)
+  ~|  'update-all failed'
   =/  i=@  0
   |-
   ?:  =(i ship-num.state)
-    ~&  >  group-bes.a
-    a(steps +(steps))
-  %=  $
-    a  (update-ship a `@p`i)
-    i  +(i)
-  ==
+    ~&  >  group-bes.state
+    `state(steps +(steps))
+  =.  state  +:(update-ship `@p`i)  ::  TODO this looks wrong
+  $(i +(i))
 ::
 ++  update-phase
   |=  [pos=loc vel=loc bes=[pos=loc val=@rd]]
   ^-  [pos=loc vel=loc bes=[pos=loc val=@rd]]
+  ~|  'update-phase failed'
   ::  x_i - position, v_i - velocity, b_i - best position so far
   ::  b - best group position, c_1 - cognitive coefficient
   ::  c_2 - social coefficient, r_1, r_2 random number between 0 and 1
