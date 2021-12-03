@@ -47,10 +47,18 @@
   =*  bes  bes.state
   =*  gbs  group-bes.state
   =/  rng  ~(. og eny.bowl)
+  =|  cards=(list card)
   |^
   ?:  =(i ship-num.state)
-    `this
-  =.  ships.state  (~(put in ships) `@p`i)
+    [cards this]
+  =.  cards  %+  weld
+               cards
+             :~  ^-  card  :: why do i need this cast here?
+                 :*  %pass  /  %agent
+                     [our.bowl %swarm]
+                     %poke  %swarm-action
+                     !>(`action`[%join-swarm `@p`i])
+             ==  ==
   =^  rapx  rng  (rads:rng 1.000)
   =^  rapy  rng  (rads:rng 1.000)
   =^  ravx  rng  (rads:rng 10)
@@ -71,6 +79,7 @@
       vel  (~(put by vel) `@p`i startv)
       bes  (~(put by bes) `@p`i [startp obj])
     ==
+    ::
   --
   ::
 ++  on-save
@@ -106,6 +115,7 @@
     %print-state  print-state
     %update-all   [~ (update-all state)]
     %update-ship  [~ (update-ship state +.action)]
+    %join-swarm   (join-swarm +.action)
   ==
 ::
 ++  print-state
@@ -118,6 +128,16 @@
   |=  loc
   ^-  @rd
   (sub:rd .~0 (add:rd (mul:rd x x) ;:(mul:rd x x y y)))  ::  -(x^2+x^2y^2)
+::
+::
+++  join-swarm
+  |=  =ship
+  ^-  (quip card _state)
+  ~|  'join swarm failed'
+  :-  ~
+  ?:  (~(has in ships.state) ship)
+    state
+  state(ships (~(put in ships) ship))
 ::
 ++  update-ship
   |=  [a=_state =ship]
@@ -134,6 +154,7 @@
   =.  vel  (~(put by vel) ship vel.phase)
   =.  bes  (~(put by bes) ship bes.phase)
   ::  if new objective is better than group best, update group best
+  ::
   =.  grp  ?.  (gte:rd val.bes.phase val.grp)
            grp
          [pos.phase val.bes.phase]
@@ -159,37 +180,38 @@
   ::  b - best group position, c_1 - cognitive coefficient
   ::  c_2 - social coefficient, r_1, r_2 random number between 0 and 1
   ::  w - inertia weight
-  =*  px  x.pos
-  =*  py  y.pos
-  =*  bx  x.pos.bes
-  =*  by  y.pos.bes
-  =*  vx  x.vel
-  =*  vy  y.vel
-  =*  gbx  x.pos.group-bes.state
-  =*  gby  y.pos.group-bes.state
-  =/  c1=@rd  .~0.3
-  =/  c2=@rd  .~0.2
   =/  rng  ~(. og eny.bowl)
   =^  ran1  rng  (rads:rng 1.000)
   =^  ran2  rng  (rads:rng 1.000)
-  =/  r1=@rd  (div:rd (sun:rd ran1) .~1000)
-  =/  r2=@rd  (div:rd (sun:rd ran2) .~1000)
-  =/  w=@rd  .~0.12
+  =/  [px=@rd py=@rd vx=@rd vy=@rd bx=@rd by=@rd gbx=@rd gby=@rd]
+    :*  x.pos  y.pos
+        x.vel  y.vel
+        x.pos.bes  y.pos.bes
+        x.pos.group-bes.state
+        y.pos.group-bes.state
+    ==
+  =/  [c1=@rd c2=@rd w=@rd r1=@rd r2=@rd]
+    :*  .~0.3  .~0.2  .~0.12
+        (div:rd (sun:rd ran1) .~1000)
+        (div:rd (sun:rd ran2) .~1000)
+    ==
   ::  velocity is updated according to the following rule:
   ::  v_i(t+1) = w * v_i(t) + c_1 * r_1(t) * (b_i(t) - x_i(t))
   ::  + c_2 * r_2(t) * (b(t) - x_i(t))
-  =/  dif=loc      [(sub:rd bx px) (sub:rd by py)]
-  =/  bes-dif=loc  [(sub:rd gbx px) (sub:rd gby py)]
+  ::
+  =/  [dif=loc bes-dif=loc]
+    :-  [(sub:rd bx px) (sub:rd by py)]
+    [(sub:rd gbx px) (sub:rd gby py)]
   =/  newvel=loc   :-  ;:  add:rd
                        (mul:rd w vx)
                        ;:(mul:rd c1 r1 x.dif)
                        ;:(mul:rd c2 r2 x.bes-dif)
-                   ==
+                       ==
                    ;:  add:rd
                        (mul:rd w vy)
                        ;:(mul:rd c1 r1 y.dif)
                        ;:(mul:rd c2 r2 y.bes-dif)
-                   ==
+                       ==
   =/  newpos=loc   :-  (add:rd x.pos x.newvel)
                    (add:rd y.pos y.newvel)
   =/  objectives=[prev=@rd cur=@rd]  :-  (objective pos.bes)
