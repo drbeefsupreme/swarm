@@ -123,6 +123,7 @@
     %update-all   update-all
     %update-ship  (update-ship +.action)
     %join-swarm   (join-swarm +.action)
+    %leave-swarm  (leave-swarm +.action)
   ==
 ::
 ++  print-state
@@ -139,6 +140,15 @@
   ?:  (~(has in ships.state) ship)
     state
   state(ships (~(put in ships) ship))
+::
+++  leave-swarm
+  |=  =ship
+  ^-  (quip card _state)
+  ~|  'leave swarm failed'
+  :-  ~
+  ?.  (~(has in ships.state) ship)
+    state
+  state(ships (~(del in ships) ship))
 ::
 ++  update-ship
   |=  =ship
