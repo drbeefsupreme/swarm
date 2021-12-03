@@ -23,8 +23,6 @@
              ==
 ::
 +$  card   card:agent:gall
-+$  loc    [x=@rd y=@rd]
-+$  phase  [pos=loc vel=loc bes=[pos=loc val=@rd] step=@ud]
 --
 ::
 %-  agent:dbug
@@ -124,6 +122,7 @@
     %update-ship  (update-ship +.action)
     %join-swarm   (join-swarm +.action)
     %leave-swarm  (leave-swarm +.action)
+    %update-ship-phase  (update-ship-phase +.action)
   ==
 ::
 ++  print-state
@@ -137,6 +136,7 @@
   ^-  (quip card _state)
   ~|  'join swarm failed'
   :-  ~
+  ::  i think the wut is actually unneeded b/c of how sets work
   ?:  (~(has in ships.state) ship)
     state
   state(ships (~(put in ships) ship))
@@ -150,26 +150,29 @@
     state
   state(ships (~(del in ships) ship))
 ::
+::  TODO: add permission check so ships can only update themselves
+++  update-ship-phase
+  |=  [=ship =phase]
+  ^-  (quip card _state)
+  ~|  'update-ship-phase failed'
+  =.  pos.state  (~(put by pos.state) ship pos.phase)
+  =.  vel.state  (~(put by vel.state) ship vel.phase)
+  =.  bes.state  (~(put by bes.state) ship bes.phase)
+  `state
+::
 ++  update-ship
   |=  =ship
   ^-  (quip card _state)
   ~|  'update-ship failed'
-  =*  bes  bes.state
-  =*  pos  pos.state
-  =*  vel  vel.state
-  =*  grp  group-bes.state
   =/  phase  %^    update-phase
-                 (~(got by pos) ship)
-               (~(got by vel) ship)
-             (~(got by bes) ship)
-  =.  pos  (~(put by pos) ship pos.phase)
-  =.  vel  (~(put by vel) ship vel.phase)
-  =.  bes  (~(put by bes) ship bes.phase)
+                 (~(got by pos.state) ship)
+               (~(got by vel.state) ship)
+             (~(got by bes.state) ship)
+  =.  state  +:(update-ship-phase ship phase)  ::  TODO: this also looks wrong
   ::  if new objective is better than group best, update group best
-  ::
-  =.  grp  ?.  (gte:rd val.bes.phase val.grp)
-           grp
-         [pos.phase val.bes.phase]
+  =.  group-bes.state  ?.  (gte:rd val.bes.phase val.group-bes.state)
+                         group-bes.state
+                       [pos.phase val.bes.phase]
   `state
 ::
 ++  update-all
@@ -184,8 +187,8 @@
   $(i +(i))
 ::
 ++  update-phase
-  |=  [pos=loc vel=loc bes=[pos=loc val=@rd]]
-  ^-  [pos=loc vel=loc bes=[pos=loc val=@rd]]
+  |=  =phase
+  ^+  phase
   ~|  'update-phase failed'
   ::  x_i - position, v_i - velocity, b_i - best position so far
   ::  b - best group position, c_1 - cognitive coefficient
@@ -195,9 +198,9 @@
   =^  ran1  rng  (rads:rng 1.000)
   =^  ran2  rng  (rads:rng 1.000)
   =/  [px=@rd py=@rd vx=@rd vy=@rd bx=@rd by=@rd gbx=@rd gby=@rd]
-    :*  x.pos  y.pos
-        x.vel  y.vel
-        x.pos.bes  y.pos.bes
+    :*  x.pos.phase  y.pos.phase
+        x.vel.phase  y.vel.phase
+        x.pos.bes.phase  y.pos.bes.phase
         x.pos.group-bes.state
         y.pos.group-bes.state
     ==
@@ -223,11 +226,11 @@
                        ;:(mul:rd c1 r1 y.dif)
                        ;:(mul:rd c2 r2 y.bes-dif)
                        ==
-  =/  newpos=loc   :-  (add:rd x.pos x.newvel)
-                   (add:rd y.pos y.newvel)
-  =/  objectives=[prev=@rd cur=@rd]  :-  (objective pos.bes)
-                                     (objective pos)
+  =/  newpos=loc   :-  (add:rd x.pos.phase x.newvel)
+                   (add:rd y.pos.phase y.newvel)
+  =/  objectives=[prev=@rd cur=@rd]  :-  (objective pos.bes.phase)
+                                     (objective pos.phase)
   ?:  (gth:rd prev.objectives cur.objectives)  :: is the previous best better than the current value?
-    [newpos newvel bes]  :: best does not get updated
+    [newpos newvel bes.phase]  :: best does not get updated
   [newpos newvel [newpos cur.objectives]]
 --
