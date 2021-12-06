@@ -124,7 +124,7 @@
     %update-ship  (update-ship +.action)
     %join-swarm   (join-swarm +.action)
     %leave-swarm  (leave-swarm +.action)
-    %update-ship-phase  (update-ship-phase +.action)
+    ::%update-ship-phase  (update-ship-phase +.action)
   ==
 ::
 ++  print-state
