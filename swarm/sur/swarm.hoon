@@ -9,4 +9,5 @@
   ==
 +$  loc    [x=@rd y=@rd]
 +$  phase  [pos=loc vel=loc bes=[pos=loc val=@rd]]
++$  phases  (map @p phase)
 --

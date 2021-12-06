@@ -15,11 +15,10 @@
                  pos=(map @p loc)
                  vel=(map @p loc)
                  bes=(map @p [pos=loc val=@rd])
-                 phases=(map @p phase)
                  group-bes=[pos=loc val=@rd]
                  ships=(set ship)
                  ship-num=@ud
-                 steps=@ud
+                 steps=(map @ud phases)
              ==
 ::
 +$  card   card:agent:gall
@@ -52,7 +51,7 @@
   =.  cards  %+  weld
                cards
              :~  ^-  card  :: why do i need this cast here?
-                 :*  %pass  /  %agent
+                 :*  %pass  /init  %agent
                      [our.bowl %swarm]
                      %poke  %swarm-action
                      !>(`action`[%join-swarm `@p`i])
@@ -97,7 +96,14 @@
     ==
   [cards this]
 ::
-++  on-watch  on-watch:def
+++  on-watch
+  |=  =path
+  ^-  (quip card _this)
+  ?+    path  (on-watch:def)
+    [%phase ~]  ::
+      ?>  (~(has in ships) src.bowl)
+      `this
+  ==
 ++  on-leave  on-leave:def
 ++  on-peek   on-peek:def
 ++  on-agent  on-agent:def
@@ -108,10 +114,6 @@
 ::
 |_  bowl=bowl:gall
 ::
-++  objective
-  |=  loc
-  ^-  @rd
-  (sub:rd .~0 (add:rd (mul:rd x x) ;:(mul:rd x x y y)))  ::  -(x^2+x^2y^2)
 ::
 ++  on-action
   |=  =action
@@ -150,15 +152,10 @@
     state
   state(ships (~(del in ships) ship))
 ::
-::  TODO: add permission check so ships can only update themselves
-++  update-ship-phase
-  |=  [=ship =phase]
-  ^-  (quip card _state)
-  ~|  'update-ship-phase failed'
-  =.  pos.state  (~(put by pos.state) ship pos.phase)
-  =.  vel.state  (~(put by vel.state) ship vel.phase)
-  =.  bes.state  (~(put by bes.state) ship bes.phase)
-  `state
+::  ++  update-self
+::    ^-  (quip card _state)
+::    ~|  'update-self failed'
+::    :_  this
 ::
 ++  update-ship
   |=  =ship
@@ -168,7 +165,7 @@
                  (~(got by pos.state) ship)
                (~(got by vel.state) ship)
              (~(got by bes.state) ship)
-  =.  state  +:(update-ship-phase ship phase)  ::  TODO: this also looks wrong
+  =.  state  (update-ship-phase ship phase)
   ::  if new objective is better than group best, update group best
   =.  group-bes.state  ?.  (gte:rd val.bes.phase val.group-bes.state)
                          group-bes.state
@@ -182,9 +179,25 @@
   |-
   ?:  =(i ship-num.state)
     ~&  >  group-bes.state
-    `state(steps +(steps))
+    `state  :: fix when steps updated
+    ::`state(steps +(steps))
   =.  state  +:(update-ship `@p`i)  ::  TODO this looks wrong
   $(i +(i))
+::
+::  after here are helper functions for various cards
+++  objective
+  |=  loc
+  ^-  @rd
+  (sub:rd .~0 (add:rd (mul:rd x x) ;:(mul:rd x x y y)))  ::  -(x^2+x^2y^2)
+::
+++  update-ship-phase
+  |=  [=ship =phase]
+  ^+  state
+  ~|  'update-ship-phase failed'
+  =.  pos.state  (~(put by pos.state) ship pos.phase)
+  =.  vel.state  (~(put by vel.state) ship vel.phase)
+  =.  bes.state  (~(put by bes.state) ship bes.phase)
+  state
 ::
 ++  update-phase
   |=  =phase
