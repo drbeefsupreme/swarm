@@ -82,9 +82,11 @@
 ++  on-save
   ^-  vase
   !>(state)
+::
 ++  on-load
   ~&  >  'on-load'
   on-load:def
+::
 ++  on-poke
   |=  [=mark =vase]
   ^-  (quip card _this)
@@ -104,6 +106,7 @@
       ?>  (~(has in ships) src.bowl)
       `this
   ==
+::
 ++  on-leave  on-leave:def
 ++  on-peek   on-peek:def
 ++  on-agent  on-agent:def
