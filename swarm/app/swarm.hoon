@@ -19,6 +19,8 @@
                  ships=(set ship)
                  ship-num=@ud
                  steps=(map @ud phases)
+                 started=_|  :: has the run started yet
+                 coordinator=@p
              ==
 ::
 +$  card   card:agent:gall
@@ -98,25 +100,50 @@
     ==
   [cards this]
 ::
+::  TODO: subscription of phase for coordinator
 ++  on-watch
   |=  =path
   ^-  (quip card _this)
   ?+    path  (on-watch:def)
-    [%phase ~]  ::
-      ?>  (~(has in ships) src.bowl)
+    [%some %path ~]  ::
+      ::?>  (~(has in ships) src.bowl)
       `this
   ==
 ::
 ++  on-leave  on-leave:def
 ++  on-peek   on-peek:def
-++  on-agent  on-agent:def
+++  on-agent
+  |=  [=wire =sign:agent:gall]
+  ^-  (quip card _this)
+  ?+    wire  (on-agent:def wire sign)
+      [%phase ~]
+    ?+    -.sign  (on-agent:def wire sign)
+        %watch-ack
+      ?~  p.sign
+        ((slog '%swarm: Subscribe succeeded!' ~) `this)
+      ((slog '%swarm: Subscribe failed!' ~) `this)
+    ::
+      ::    %kick
+      ::  %-  (slog '%swarm-coord: Got kick, resubscribing...' ~)
+      ::  :_  this
+      ::  :~  [%pass /todos %agent [src.bowl %todo] %watch /updates]
+      ::  ==
+    ::
+        %fact
+      ?+    p.cage.sign  (on-agent:def wire sign)
+          %swarm-update
+        ~&  !<(update q.cage.sign)  :: TODO why is this not working?
+        `this
+      ==
+    ==
+  ==
+
 ++  on-arvo   on-arvo:def
 ++  on-fail   on-fail:def
 --
 ::  helper core
 ::
 |_  bowl=bowl:gall
-::
 ::
 ++  on-action
   |=  =action
@@ -127,6 +154,8 @@
     %update-ship  (update-ship +.action)
     %join-swarm   (join-swarm +.action)
     %leave-swarm  (leave-swarm +.action)
+    %update-self  update-self
+    %start-run    start-run
     ::%update-ship-phase  (update-ship-phase +.action)
   ==
 ::
@@ -136,15 +165,24 @@
   ~&  >>>  bowl
   `state
 ::
+++  start-run
+  ^-  (quip card _state)
+  ~|  'start-run failed'
+  ?>  =(src.bowl coordinator.state)
+  `state(started %.y)
+::
 ++  join-swarm
-  |=  =ship
+  |=  =ship  :: ship of swarm coordinator
   ^-  (quip card _state)
   ~|  'join swarm failed'
-  :-  ~
+  :_  state
+  :~  :*  %pass  /phase  %agent  [ship %swarm-coord]  %poke  %swarm-coord  !>([%join-swarm ~])
+  ==  ==
+::  :-  ~
   ::  i think the wut is actually unneeded b/c of how sets work
-  ?:  (~(has in ships.state) ship)
-    state
-  state(ships (~(put in ships) ship))
+::  ?:  (~(has in ships.state) ship)
+::    state
+::  state(ships (~(put in ships) ship))
 ::
 ++  leave-swarm
   |=  =ship
@@ -155,10 +193,17 @@
     state
   state(ships (~(del in ships) ship))
 ::
-::  ++  update-self
-::    ^-  (quip card _state)
-::    ~|  'update-self failed'
-::    :_  this
+++  update-self
+  ^-  (quip card _state)
+  =/  phase  %^    update-phase
+                 (~(got by pos.state) our.bowl)
+               (~(got by vel.state) our.bowl)
+             (~(got by bes.state) our.bowl)
+  =.  state  (update-ship-phase our.bowl phase)
+  ~&  >>>  ['phase' !>(phase)]
+  :_  state
+  :~  [%give %fact ~[/phase] %swarm-update !>(phase)]
+  ==
 ::
 ++  update-ship
   |=  =ship
