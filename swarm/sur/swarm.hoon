@@ -14,6 +14,7 @@
   $%  [%join-swarm ~]
       [%leave-swarm ~]
       [%start-run ~]
+      [%step ~]
   ==
 ::
 +$  update

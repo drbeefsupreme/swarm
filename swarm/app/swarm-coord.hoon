@@ -102,6 +102,7 @@
     %join-swarm  join-swarm
     %leave-swarm  leave-swarm
     %start-run  start-run
+    %step  step
   ==
 ::
 ++  join-swarm
@@ -138,4 +139,21 @@
   ::  this should probably be done as a thread, and the run doesn't actually start
   ::  until getting acks from everybody in the swarm
   `state(start %.y)
+::
+++  step
+  ^-  (quip card _state)
+  ~|  'step failed'
+  ?>  =(src.bowl our.bowl)
+  =/  swarm-list=(list ship)  ~(tap in swarm.state)
+  =|  cards=(list card)
+  |-
+  ?~  swarm-list
+    [cards state]
+  =/  sam=@p  -.swarm-list
+  =.  cards  %+  weld  cards
+             :~  ^-  card  ::  why won't it compile without this?
+                 :*  %pass  /some/wire  %agent  [sam %swarm]  %poke
+                 %swarm-action  !>(~[%update-self])
+             ==  ==
+  $(swarm-list t.swarm-list)
 --
