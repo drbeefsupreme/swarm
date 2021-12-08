@@ -1,10 +1,10 @@
 |%
 +$  action
-  $%  [%update-all ~]
+  $%  ::[%update-all ~]
       [%print-state ~]
-      [%update-ship =ship]
+::      [%update-ship =ship]
       [%join-swarm =ship]
-      [%leave-swarm =ship]
+ ::     [%leave-swarm =ship]
       [%update-self ~]
       [%start-run ~]
 ::      [%update-ship-phase =ship =phase]

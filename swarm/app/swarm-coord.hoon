@@ -61,8 +61,10 @@
 ++  on-agent
   |=  [=wire =sign:agent:gall]
   ^-  (quip card _this)
+  ~&  '%swarm-coord on-agent'
   ?+    wire  (on-agent:def wire sign)
-      [%phase ~]
+      [%some %wire ~]
+    ~&  'some-wire'
     ?+    -.sign  (on-agent:def wire sign)
         %watch-ack
       ?~  p.sign
@@ -78,7 +80,10 @@
         %fact
       ?+    p.cage.sign  (on-agent:def wire sign)
           %swarm-update
-        ~&  !<(update q.cage.sign)  :: TODO why is this not working?
+        ~&  '%swarm-coord %fact received'
+        =/  paz=update  !<(update q.cage.sign)
+        ~&  paz
+        =.  next-phase.state  (~(put by next-phase.state) src.bowl +.paz)
         `this
       ==
     ==
@@ -103,7 +108,9 @@
   ^-  (quip card _state)
   ~|  'join-swarm failed'
   :_  state(swarm (~(put in swarm) src.bowl))
-  :~  :*  %pass  /phase  %agent  [src.bowl %swarm]  %watch  /some/path
+  =/  who  `@`src.bowl
+  :~  :*  %pass  /some/wire  %agent  [src.bowl %swarm]  %watch  /phase
+  ::
   ==  ==
 ::  =/  swarm-list=(list ship)  ~(tap in swarm)
 ::  =|  cards=(list card)
