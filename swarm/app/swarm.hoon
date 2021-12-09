@@ -128,6 +128,7 @@
  ::   %leave-swarm  (leave-swarm +.action)
     %update-self  update-self
     %start-run    start-run
+    %update-best  (update-best +.action)
     ::%update-ship-phase  (update-ship-phase +.action)
   ==
 ::
@@ -169,6 +170,12 @@
   :_  state
   :~  [%give %fact ~[/phase] %swarm-update !>([phase+phase.state])]
   ==
+::
+++  update-best
+  |=  [pos=loc val=@rd]
+  ^-  (quip card _state)
+  =.  group-bes.state  [pos val]
+  `state
 ::
 ::  ++  update-ship
 ::    |=  =ship

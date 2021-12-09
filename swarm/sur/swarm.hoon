@@ -7,6 +7,7 @@
  ::     [%leave-swarm =ship]
       [%update-self ~]
       [%start-run ~]
+      [%update-best [pos=loc val=@rd]]
 ::      [%update-ship-phase =ship =phase]
   ==
 ::
@@ -15,6 +16,7 @@
       [%leave-swarm ~]
       [%start-run ~]
       [%step ~]
+      [%check-next ~]
   ==
 ::
 +$  update

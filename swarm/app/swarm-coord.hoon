@@ -7,7 +7,7 @@
 ::
 ++  state-0  $:  %0
                  config=(map @ud phases)
-                 best=(map @ud [pos=loc val=@rd])
+                 group-best=[pos=loc val=@rd]
                  swarm=(set ship)
                  cur-step=@ud
                  next-phase=phases
@@ -30,6 +30,7 @@
 ++  on-init
   ^-  (quip card _this)
   ~&  >>  '%swarm-coord init'
+  =.  group-best.state  [[.~0 .~0] .~-15593972089999]
   `this
 ::
 ++  on-save
@@ -81,13 +82,16 @@
       ?+    p.cage.sign  (on-agent:def wire sign)
           %swarm-update
         ~&  '%swarm-coord %fact received'
-        =/  paz=update  !<(update q.cage.sign)
-        ~&  paz
-        =.  next-phase.state  (~(put by next-phase.state) src.bowl +.paz)
+        =/  paz=phase  +:!<(update q.cage.sign)
+        =.  group-best.state  ?.  (gte:rd val.bes.paz val.group-best.state)
+                                group-best.state
+                              [pos.paz val.bes.paz]
+        =.  next-phase.state  (~(put by next-phase.state) src.bowl paz)
         `this
       ==
     ==
   ==
+::
 ::
 ++  on-arvo  on-arvo:def
 ++  on-fail  on-fail:def
@@ -99,10 +103,11 @@
   |=  =coord
   ^-  (quip card _state)
   ?-  -.coord
-    %join-swarm  join-swarm
+    %join-swarm   join-swarm
     %leave-swarm  leave-swarm
-    %start-run  start-run
-    %step  step
+    %start-run    start-run
+    %step         step
+    %check-next   check-next
   ==
 ::
 ++  join-swarm
@@ -113,6 +118,28 @@
   :~  :*  %pass  /some/wire  %agent  [src.bowl %swarm]  %watch  /phase
   ::
   ==  ==
+::
+++  check-next
+  ^-  (quip card _state)
+  ~|  'check-next failed'
+  =/  left=(set ship)  (~(dif in swarm.state) ~(key by next-phase.state))
+  ?~  left
+    ~&  >>  'got response from all swarmers'
+    =.  config.state  (~(put by config.state) cur-step next-phase.state)
+    =.  next-phase.state  *phases
+    =/  swarm-list  ~(tap in swarm)
+    =|  cards=(list card)
+    |-
+    ?^  swarm-list
+      =.  cards  %+  weld  cards
+                 :~  ^-  card  ::  why won't it compile without this?
+                     :*  %pass  /best/wire  %agent  [i.swarm-list %swarm]  %poke
+                     %swarm-action  !>([%update-best group-best.state])
+                 ==  ==
+      $(swarm-list t.swarm-list)
+    [cards state]
+  ~&  >>  'not all swarmers have responded, do nothing'
+  `state
 ::  =/  swarm-list=(list ship)  ~(tap in swarm)
 ::  =|  cards=(list card)
 ::  |-
@@ -135,11 +162,10 @@
   ^-  (quip card _state)
   ~|  'start-run failed'
   ?>  =(src.bowl our.bowl)  :: only the coordinator should be able to start
-  ::  TODO: send pokes to all swarm members letting them know the run has begun.
-  ::  this should probably be done as a thread, and the run doesn't actually start
-  ::  until getting acks from everybody in the swarm
   `state(start %.y)
 ::
+::  TODO: make a thread that waits until it has responses from everybody before
+::  updating config.state and then do it again
 ++  step
   ^-  (quip card _state)
   ~|  'step failed'
@@ -148,8 +174,8 @@
   =|  cards=(list card)
   |-
   ?~  swarm-list
-    [cards state]
-  =/  sam=@p  -.swarm-list
+    [cards state(cur-step +(cur-step))]
+  =/  sam=@p  i.swarm-list
   =.  cards  %+  weld  cards
              :~  ^-  card  ::  why won't it compile without this?
                  :*  %pass  /some/wire  %agent  [sam %swarm]  %poke
