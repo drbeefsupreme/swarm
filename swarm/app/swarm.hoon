@@ -1,5 +1,4 @@
 ::  TODO
-::  add networking
 ::  add peeks
 ::  make random factor in update a gaussian rather than uniform
 ::  use lagoon
